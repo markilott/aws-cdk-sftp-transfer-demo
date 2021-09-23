@@ -8,7 +8,7 @@
 /* eslint-disable no-new */
 const cdk = require('@aws-cdk/core');
 const { AplicationStack } = require('../lib/application/application-stack');
-const options = require('../lib/application/options.json');
+const options = require('../lib/application/options');
 
 const app = new cdk.App();
 

@@ -1,0 +1,25 @@
+{
+    "env": {
+        "es6": true,
+        "node": true
+    },
+    "extends": [
+        "airbnb-base"
+    ],
+    "globals": {
+        "Atomics": "readonly",
+        "SharedArrayBuffer": "readonly"
+    },
+    "parserOptions": {
+        "ecmaVersion": 2020
+    },
+    "rules": {
+        "linebreak-style":"off",
+        "no-console": "off",
+        "max-len": "off",
+        "no-restricted-syntax": "warn",
+        "indent": ["error", 4],
+        "import/extensions": ["off"]
+    },
+    "plugins": []
+}

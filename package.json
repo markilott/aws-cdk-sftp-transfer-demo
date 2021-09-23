@@ -1,6 +1,6 @@
 {
   "name": "aws-transfer-demo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AWS Transfer CDK Demo",
   "main": "bin/deploy.js",
   "directories": {
@@ -12,16 +12,24 @@
   "author": "Mark Ilott",
   "license": "ISC",
   "dependencies": {
-    "@aws-cdk/aws-certificatemanager": "^1.100.0",
-    "@aws-cdk/aws-iam": "^1.100.0",
-    "@aws-cdk/aws-ec2": "^1.100.0",
-    "@aws-cdk/aws-lambda": "^1.100.0",
-    "@aws-cdk/aws-route53": "^1.100.0",
-    "@aws-cdk/aws-s3": "^1.100.0",
-    "@aws-cdk/aws-s3-notifications": "^1.100.0",
-    "@aws-cdk/aws-sns": "^1.100.0",
-    "@aws-cdk/aws-sns-subscriptions": "^1.100.0",
-    "@aws-cdk/aws-transfer": "^1.100.0",
-    "@aws-cdk/core": "^1.100.0"
+    "@aws-cdk/aws-certificatemanager": "^1.124.0",
+    "@aws-cdk/aws-ec2": "^1.124.0",
+    "@aws-cdk/aws-iam": "^1.124.0",
+    "@aws-cdk/aws-lambda": "^1.124.0",
+    "@aws-cdk/aws-logs": "^1.124.0",
+    "@aws-cdk/aws-route53": "^1.124.0",
+    "@aws-cdk/aws-s3": "^1.124.0",
+    "@aws-cdk/aws-s3-notifications": "^1.124.0",
+    "@aws-cdk/aws-secretsmanager": "^1.124.0",
+    "@aws-cdk/aws-sns": "^1.124.0",
+    "@aws-cdk/aws-sns-subscriptions": "^1.124.0",
+    "@aws-cdk/aws-transfer": "^1.124.0",
+    "@aws-cdk/core": "^1.124.0",
+    "@aws-cdk/custom-resources": "^1.124.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.24.2"
   }
 }
