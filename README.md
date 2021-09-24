@@ -14,6 +14,8 @@ This Readme assumes you already have an understanding of CDK deployments.
 
 You can deploy the stacks using CDK Deploy.
 
+A more detailed explanation is available [in this Medium article](https://markilott.medium.com/aws-transfer-sftp-with-cdk-and-custom-ssh-host-key-10e4cb98816c?sk=8d3fab350a9d5f0d8b50fa66f4558eb1).
+
 &nbsp;
 
 ## Requirements
