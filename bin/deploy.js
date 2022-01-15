@@ -6,11 +6,11 @@
  */
 
 /* eslint-disable no-new */
-const cdk = require('@aws-cdk/core');
+const { App } = require('aws-cdk-lib');
 const { AplicationStack } = require('../lib/application/application-stack');
 const options = require('../lib/application/options');
 
-const app = new cdk.App();
+const app = new App();
 
 // use account details from default AWS CLI credentials:
 const account = process.env.CDK_DEFAULT_ACCOUNT;
