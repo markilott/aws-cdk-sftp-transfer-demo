@@ -2,41 +2,46 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-new */
 
-const {
-    Stack, CfnOutput, RemovalPolicy, Duration, CustomResource,
-} = require('aws-cdk-lib');
-const { CfnServer, CfnUser } = require('aws-cdk-lib').aws_transfer;
-const {
+import {
+    Stack, CfnOutput, RemovalPolicy, Duration, CustomResource, StackProps,
+} from 'aws-cdk-lib';
+import { CfnServer, CfnUser } from 'aws-cdk-lib/aws-transfer';
+import {
     Vpc, SecurityGroup, CfnEIP, Peer, Port,
-} = require('aws-cdk-lib').aws_ec2;
-const { HostedZone, CnameRecord } = require('aws-cdk-lib').aws_route53;
-const { Certificate, CertificateValidation } = require('aws-cdk-lib').aws_certificatemanager;
-const { Role, PolicyStatement, ServicePrincipal } = require('aws-cdk-lib').aws_iam;
-const { Bucket, BlockPublicAccess, EventType } = require('aws-cdk-lib').aws_s3;
-const { SnsDestination } = require('aws-cdk-lib').aws_s3_notifications;
-const { Topic } = require('aws-cdk-lib').aws_sns;
-const { EmailSubscription, LambdaSubscription } = require('aws-cdk-lib').aws_sns_subscriptions;
-const { Function, Runtime, Code } = require('aws-cdk-lib').aws_lambda;
-const { Secret } = require('aws-cdk-lib').aws_secretsmanager;
-const { Provider } = require('aws-cdk-lib').custom_resources;
-const { RetentionDays } = require('aws-cdk-lib').aws_logs;
+} from 'aws-cdk-lib/aws-ec2';
+import { HostedZone, CnameRecord, IHostedZone } from 'aws-cdk-lib/aws-route53';
+import { Certificate, CertificateValidation, ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { Role, PolicyStatement, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { Bucket, BlockPublicAccess, EventType } from 'aws-cdk-lib/aws-s3';
+import { SnsDestination } from 'aws-cdk-lib/aws-s3-notifications';
+import { Topic } from 'aws-cdk-lib/aws-sns';
+import { EmailSubscription, LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
+import { Function, Runtime, Code } from 'aws-cdk-lib/aws-lambda';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
+import { Provider } from 'aws-cdk-lib/custom-resources';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { Construct } from 'constructs';
+import { options } from '../../config';
 
-class AplicationStack extends Stack {
-    /**
-     * Deploys an AWS Transfer Server with optional custom hostname and certificate.
-     * User(s) are created with SSH key authentication.
-     * S3 notifications are sent to SNS on new file upload, which triggers email
-     * notifications and a Lambda archive function.
-     * An optional custom Lambda resource can import a custom Host key for the server.
-     *
-     * @param {cdk.Construct} scope
-     * @param {string} id
-     * @param {cdk.StackProps=} props
-     */
-    constructor(scope, id, props) {
+/**
+ * Deploys an AWS Transfer Server with optional custom hostname and certificate.
+ * User(s) are created with SSH key authentication.
+ * S3 notifications are sent to SNS on new file upload, which triggers email
+ * notifications and a Lambda archive function.
+ * An optional custom Lambda resource can import a custom Host key for the server.
+ *
+ * @param {Construct} scope
+ * @param {string} id
+ * @param {StackProps=} props
+ */
+export class ApplicationStack extends Stack {
+    zone?: IHostedZone;
+
+    certificate?: ICertificate | Certificate;
+
+    constructor(scope: Construct, id: string, props: StackProps) {
         super(scope, id, props);
 
-        const { options } = props;
         const {
             vpcAttr, sftpAttr, customHostKey, customHostname, users, notificationEmails,
         } = options;
@@ -111,8 +116,8 @@ class AplicationStack extends Stack {
         // EIP addresses for the server. Optional, but allows for your customers/users to whitelist your server
         const addressAllocationIds = subnetIds.map((sid) => (new CfnEIP(this, `eip${sid}`)).attrAllocationId);
 
-        // SFTP Server
-        const serverProps = {
+        // Create the SFTP server
+        const server = new CfnServer(this, 'sftpServer', {
             domain: 'S3',
             endpointType: 'VPC',
             identityProviderType: 'SERVICE_MANAGED',
@@ -124,11 +129,8 @@ class AplicationStack extends Stack {
                 subnetIds,
                 securityGroupIds: [sg.securityGroupId],
             },
-        };
-        if (useCustomHostname) { serverProps.certificate = this.certificate.certificateArn; }
-
-        // Create the server
-        const server = new CfnServer(this, 'sftpServer', serverProps);
+            certificate: this.certificate?.certificateArn,
+        });
 
         // Server attributes
         const serverId = server.attrServerId;
@@ -139,7 +141,7 @@ class AplicationStack extends Stack {
         });
 
         // DNS Host record
-        if (useCustomHostname) {
+        if (useCustomHostname && this.zone) {
             const sftpDomainName = `${sftpHostname}.${this.zone.zoneName}`;
             new CnameRecord(this, 'record', {
                 recordName: sftpDomainName,
@@ -223,7 +225,7 @@ class AplicationStack extends Stack {
         }));
 
         // Users
-        users.forEach((user, i) => {
+        users.forEach((user: { userName: string; publicKey: string; }, i) => {
             const { userName, publicKey } = user;
             new CfnUser(this, `user${i + 1}`, {
                 role: userRole.roleArn,
@@ -272,7 +274,7 @@ class AplicationStack extends Stack {
         sftpBucket.addEventNotification(EventType.OBJECT_CREATED_PUT, new SnsDestination(notifTopic));
 
         // Add email subscribers
-        notificationEmails.forEach((email) => {
+        notificationEmails.forEach((email: string) => {
             notifTopic.addSubscription(new EmailSubscription(email));
         });
 
@@ -306,5 +308,3 @@ class AplicationStack extends Stack {
         }
     }
 }
-
-module.exports = { AplicationStack };

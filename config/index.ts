@@ -1,4 +1,4 @@
-module.exports = {
+export const options = {
     vpcAttr: {
         customVpcId: '', // Use the default VPC if blank
     },

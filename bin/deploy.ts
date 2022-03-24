@@ -6,9 +6,9 @@
  */
 
 /* eslint-disable no-new */
-const { App } = require('aws-cdk-lib');
-const { AplicationStack } = require('../lib/application/application-stack');
-const options = require('../lib/application/options');
+import 'source-map-support/register';
+import { App } from 'aws-cdk-lib';
+import { ApplicationStack } from '../lib/application/application-stack';
 
 const app = new App();
 
@@ -17,8 +17,7 @@ const account = process.env.CDK_DEFAULT_ACCOUNT;
 const region = process.env.CDK_DEFAULT_REGION;
 
 // Create AWS Transfer stack
-new AplicationStack(app, 'AwsTransferStack', {
+new ApplicationStack(app, 'AwsTransferStack', {
     description: 'AWS Transfer Demo Stack',
     env: { account, region },
-    options,
 });
