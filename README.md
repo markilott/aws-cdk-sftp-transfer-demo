@@ -1,6 +1,6 @@
 # AWS CDK AWS Transfer SFTP Server Demo
 
-This Javascript CDK project creates an AWS Transfer SFTP Server with test users and S3 notifications.
+This Typescript CDK project creates an AWS Transfer SFTP Server with test users and S3 notifications.
 
 <img src="lib/assets/aws-transfer-diagram.png" width="1000">
 
@@ -32,7 +32,7 @@ Assuming you have the AWS CLI and CDK installed and configured already...
 Setup the project:
 - Clone the repo
 - run `npm install`
-- Update the `lib/application/options.js` file with your own environment details and preferences
+- Update the `config/index.ts` file with your own environment details and preferences
 
 &nbsp;
 
