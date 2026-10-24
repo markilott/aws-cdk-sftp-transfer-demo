@@ -1,9 +1,9 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-const AWS = require('aws-sdk');
+import { S3Client, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { SNSEvent, S3Event } from 'aws-lambda';
 
-const s3 = new AWS.S3();
+const s3 = new S3Client();
 
-function urlDecode(str) {
+function urlDecode(str: string): string {
     // Removes url encoding from S3 keys in notifications
     return decodeURIComponent(str.replace(/\+/g, ' '));
 }
@@ -12,18 +12,17 @@ const archiveBucket = process.env.ARCHIVE_BUCKET;
 
 /**
  * Get notification of file upload from S3 and move file to archive
- * @param {object} event
- * @param {object[]} event.Records - SNS Records
- * @param {string} event.Records[].Sns.Message - S3 event notification
- * @param {object[]} event.Records[].Sns.Message.Records - S3 events
+ * @param {object} event - SNS event wrapping the S3 event notification
  */
-exports.handler = async (event) => {
+export const handler = async (event: SNSEvent) => {
     console.log('Event: ', JSON.stringify(event));
 
     try {
-        const s3Events = [];
+        if (!archiveBucket) { throw new Error('ARCHIVE_BUCKET env variable is required'); }
+
+        const s3Events: S3Event['Records'] = [];
         event.Records.forEach((record) => {
-            const msg = JSON.parse(record.Sns.Message);
+            const msg = JSON.parse(record.Sns.Message) as S3Event;
             msg.Records.forEach((rec) => s3Events.push(rec));
         });
         console.log('s3Events', JSON.stringify((s3Events)));
@@ -31,21 +30,21 @@ exports.handler = async (event) => {
             const { bucket, object } = ev.s3;
 
             // Copy the file to the archive bucket
-            await s3.copyObject({
+            await s3.send(new CopyObjectCommand({
                 Bucket: archiveBucket,
                 CopySource: `${bucket.name}/${object.key}`, // URL encoding is required here
                 Key: urlDecode(object.key), // Original key name wanted
-            }).promise();
+            }));
 
             // Delete the original file
-            await s3.deleteObject({
+            await s3.send(new DeleteObjectCommand({
                 Bucket: bucket.name,
                 Key: urlDecode(object.key), // Original key name required
-            }).promise();
+            }));
         }));
         return { success: true };
     } catch (err) {
-        err.message = (err.message) || 'Internal handler error';
+        if (!(err instanceof Error)) { throw err; }
         console.log('Error caught: ', err);
         throw err;
     }
