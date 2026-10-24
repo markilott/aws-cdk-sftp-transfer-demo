@@ -1,7 +1,3 @@
-/* eslint-disable no-multi-str */
-/* eslint-disable no-template-curly-in-string */
-/* eslint-disable no-new */
-
 import {
     Stack, CfnOutput, RemovalPolicy, Duration, CustomResource, StackProps,
 } from 'aws-cdk-lib';
@@ -16,10 +12,11 @@ import { Bucket, BlockPublicAccess, EventType } from 'aws-cdk-lib/aws-s3';
 import { SnsDestination } from 'aws-cdk-lib/aws-s3-notifications';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { EmailSubscription, LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
-import { Function, Runtime, Code } from 'aws-cdk-lib/aws-lambda';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Provider } from 'aws-cdk-lib/custom-resources';
-import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import { options } from '../../config';
 
@@ -168,13 +165,18 @@ export class ApplicationStack extends Stack {
             // Import the SFTP Key Secret
             const keySecret = Secret.fromSecretCompleteArn(this, 'keySecret', hostKeySecretArn);
             // Lambda function for custom resource. We cannot use the CDK AWSCustomResource provider as we need to manipulate the key from Secrets Manager
-            const hostKeyFnc = new Function(this, 'hostKeyFnc', {
+            const hostKeyFnc = new NodejsFunction(this, 'hostKeyFnc', {
                 description: 'Update SFTP Host Key',
-                runtime: Runtime.NODEJS_14_X,
-                handler: 'index.handler',
+                runtime: Runtime.NODEJS_24_X,
                 timeout: Duration.seconds(5),
-                code: Code.fromAsset(`${__dirname}/lambda/host-key`),
-                logRetention: RetentionDays.ONE_WEEK,
+                entry: `${__dirname}/lambda/host-key/index.ts`,
+                bundling: {
+                    sourceMap: true,
+                    externalModules: ['@aws-sdk/*'],
+                },
+                logGroup: new LogGroup(this, 'hostKeyFncLogs', {
+                    retention: RetentionDays.ONE_WEEK,
+                }),
             });
             // Allow access to Secret
             keySecret.grantRead(hostKeyFnc);
@@ -187,7 +189,9 @@ export class ApplicationStack extends Stack {
             // Create the CloudFormation custom provider
             const hostKeyProvider = new Provider(this, 'hostKeyProvider', {
                 onEventHandler: hostKeyFnc,
-                logRetention: RetentionDays.ONE_WEEK,
+                logGroup: new LogGroup(this, 'hostKeyProviderLogs', {
+                    retention: RetentionDays.ONE_WEEK,
+                }),
             });
 
             // Update the host key using the custom resource
@@ -290,12 +294,15 @@ export class ApplicationStack extends Stack {
             });
 
             // Archive function
-            const archiveFnc = new Function(this, 'archiveFnc', {
+            const archiveFnc = new NodejsFunction(this, 'archiveFnc', {
                 description: 'Lambda SFTP Archive Function',
-                runtime: Runtime.NODEJS_14_X,
-                handler: 'index.handler',
+                runtime: Runtime.NODEJS_24_X,
                 timeout: Duration.seconds(5),
-                code: Code.fromAsset(`${__dirname}/lambda/archive`),
+                entry: `${__dirname}/lambda/archive/index.ts`,
+                bundling: {
+                    sourceMap: true,
+                    externalModules: ['@aws-sdk/*'],
+                },
                 environment: {
                     ARCHIVE_BUCKET: archiveBucket.bucketName,
                 },

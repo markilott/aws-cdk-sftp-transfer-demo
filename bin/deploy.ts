@@ -5,7 +5,6 @@
  * cdk deploy --all
  */
 
-/* eslint-disable no-new */
 import 'source-map-support/register';
 import { App } from 'aws-cdk-lib';
 import { ApplicationStack } from '../lib/application/application-stack';
